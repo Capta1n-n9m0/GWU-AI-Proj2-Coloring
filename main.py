@@ -95,11 +95,6 @@ def main(argv):
   else:
     print("No solution exists")
   
-  colormap =[
-    COLORS[solution[node]] for node in graph.nodes
-  ]
-
-  draw_colored_graph(graph, colormap)
 
 
 if __name__ == "__main__":
