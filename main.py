@@ -2,7 +2,10 @@ import sys
 import pathlib
 import networkx as nx
 import matplotlib.pyplot as plt
-from Colorer import BuildInColorer, check_coloring, NaiveBacktrackingColorer
+from Colorer import BuildInColorer, check_coloring, NaiveBacktrackingColorer, Colorer, ImprovedBacktrackingColorer, AC3BacktrackingColorer
+import timeit
+import multiprocessing
+from multiprocessing.connection import Connection, Pipe
 
 COLORS = [
   '#ff0000',  # red
@@ -90,12 +93,56 @@ def main(argv):
     if not check_coloring(graph, solution):
       print("Invalid coloring found", file=sys.stderr)
     print("# Node,Color")
-    for node, color in solution.items():
-      print(f"{node}:{color}")
+    nodes = sorted(solution.keys())
+    for node in nodes:
+      print(f"{node}:{solution[node]}")
   else:
     print("No solution exists")
-  
 
+def runner(f_in: str, f_out: str, colorer_class: type[Colorer], conn: Connection = None):
+  n_colors, edges = read_input(pathlib.Path(f_in))
+  
+  graph = nx.Graph()
+  graph.add_edges_from(edges)
+  
+  colorer = colorer_class(graph, n_colors)
+  
+  start = timeit.default_timer()
+  solution = colorer.color()
+  stop = timeit.default_timer()
+  
+  if solution:
+    if not check_coloring(graph, solution):
+      print(f"Invalid coloring found for {f_in}", file=sys.stderr)
+    with open(f_out, 'w') as file:
+      nodes = sorted(solution.keys())
+      for node in nodes:
+        file.write(f"{node}:{solution[node]}\n")
+  else:
+    print(f"No solution exists for {f_in}")
+  if conn:
+    conn.send(stop - start)
+    conn.close()
+  return stop - start
+
+  
+def test(time_limit: int):
+  for i in range(1, 12):
+    parent_conn, child_conn = Pipe()
+    proc = multiprocessing.Process(target=runner, args=(f"input-{i}.txt", f"output-{i}.txt", AC3BacktrackingColorer, child_conn))
+    proc.start()
+    proc.join(timeout=time_limit)
+    if proc.is_alive():
+      proc.terminate()
+      print(f"Test {i} failed: time limit exceeded")
+    else:
+      color_time = parent_conn.recv()
+      print(f"Test {i} passed: {color_time} seconds")
+      
+    
+
+      
 
 if __name__ == "__main__":
   main(sys.argv)
+  # test(20)

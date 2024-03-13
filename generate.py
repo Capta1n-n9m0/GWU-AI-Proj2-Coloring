@@ -45,13 +45,18 @@ def draw_average_colors(unique: str, nodes_space: npt.NDArray[int], p_space: npt
   plt.savefig(f"average_colors_{unique}.png")
 
 def main():
-  nodes_space: npt.NDArray[int] = np.arange(10, 60, 1)
-  p_space: npt.NDArray[float] = np.arange(0.05, 0.50, 0.05)
-  
-  unique = generate_average_colors(nodes_space, p_space)
-  
-  plt.figure(figsize=(20, 20))
-  draw_average_colors(unique, nodes_space, p_space)
+  N = 5000
+  P = 0.10
+  g = nxgen.fast_gnp_random_graph(N, P)
+  colors = nx.coloring.greedy_color(g, strategy='largest_first')
+  n_colors = max(colors.values()) + 1
+  with open("input-11.txt", "w") as file:
+    file.write(f"# Graph with {len(g.nodes)} nodes and {len(g.edges)} edges\n")
+    file.write(f"# Generated with fast_gnp_random_graph({N}, {P})\n")
+    file.write(f"# Generated on {datetime.datetime.now()}\n")
+    file.write(f"colors = {n_colors}\n")
+    for edge in g.edges:
+      file.write(f"{edge[0]},{edge[1]}\n")
   
 
   
