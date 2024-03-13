@@ -85,7 +85,7 @@ def main(argv):
   graph = nx.Graph()
   graph.add_edges_from(edges)
   
-  colorer = NaiveBacktrackingColorer(graph, n_colors)
+  colorer = AC3BacktrackingColorer(graph, n_colors)
   
   solution = colorer.color()
   
